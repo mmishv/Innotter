@@ -1,0 +1,52 @@
+version: "3"
+
+services:
+  web:
+    container_name: django_innotter
+    build: .
+    command: sh ./entrypoint.sh
+    volumes:
+      - .:/app
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./.env
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+    networks:
+      - user-management_default
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    env_file:
+      - ./.env
+    ports:
+      - 5673:5672
+      - 15672:15672
+
+  celery_worker:
+    restart: always
+    container_name: celery_worker
+    build: .
+    command: sh ./entrypoint_celery.sh
+    env_file:
+      - ./.env
+    volumes:
+      - .:/app
+    depends_on:
+      - rabbitmq
+    networks:
+      - user-management_default
+  redis:
+    restart: unless-stopped
+    container_name: innotter_redis
+    image: redis:7.0.5-alpine
+    expose:
+      - 6379
+    env_file:
+      - ./.env
+networks:
+    user-management_default:
+      external: true

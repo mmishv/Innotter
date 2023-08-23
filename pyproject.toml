@@ -7,8 +7,50 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-
+django = "^4.2.4"
+pre-commit = "^3.3.3"
+black = "^23.7.0"
+isort = "^5.12.0"
+pika = "1.2.0"
+python-dotenv = "^1.0.0"
+psycopg2-binary = "^2.9.7"
+djangorestframework = "^3.14.0"
+boto3 = "^1.28.31"
+celery = {extras = ["redis"], version = "^5.3.1"}
+kombu = "^5.3.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pre_commit]
+hooks = [
+  "trailing-whitespace",
+  "end-of-file-fixer",
+  "check-yaml",
+  "debug-statements",
+  "black",
+  "isort",
+]
+
+[tool.pre_commit.hook-trailing-whitespace]
+files = ["*.py"]
+
+[tool.pre_commit.hook-end-of-file-fixer]
+files = ["*.py"]
+
+[tool.pre_commit.hook-check-yaml]
+files = ["*.yml", "*.yaml"]
+
+[tool.pre_commit.hook-debug-statements]
+files = ["*.py"]
+
+[tool.pre_commit.hook-double-quote-string-fixer]
+files = ["*.py"]
+
+[tool.pre_commit.hook-black]
+files = ["*.py"]
+
+[tool.pre_commit.hook-isort]
+args = ["--profile", "black"]
+files = ["*.py"]
