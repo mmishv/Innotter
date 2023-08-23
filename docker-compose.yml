@@ -39,7 +39,14 @@ services:
       - rabbitmq
     networks:
       - user-management_default
-
+  redis:
+    restart: unless-stopped
+    container_name: innotter_redis
+    image: redis:7.0.5-alpine
+    expose:
+      - 6379
+    env_file:
+      - ./.env
 networks:
     user-management_default:
       external: true
