@@ -15,6 +15,7 @@ ALLOWED_HOSTS = [host for host in os.getenv("DJANGO_ALLOWED_HOSTS").split(",")]
 INSTALLED_APPS = [
     "posts",
     "pages",
+    "authentication",
     "celery",
     "rest_framework",
     "django.contrib.admin",
