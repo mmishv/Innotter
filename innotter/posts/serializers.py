@@ -15,3 +15,15 @@ class PostSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         data["liked_by"] = [elem.user_uuid for elem in instance.liked_by.all()]
         return data
+
+
+class PostContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = ("content",)
+
+    def create(self, validated_data):
+        page_pk = self.context["view"].kwargs.get("page_pk")
+        page = Page.objects.get(pk=page_pk)
+        new_post = Post.objects.create(page=page, **validated_data)
+        return new_post
