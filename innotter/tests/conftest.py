@@ -4,8 +4,11 @@ import pytest
 import requests
 from authentication.service import AuthService
 from django.http import HttpRequest
+from pages.models import Page
+from rest_framework.test import APIClient
 
 BASE_URL = os.getenv("USER_MANAGEMENT_BASE_URL")
+client = APIClient()
 
 
 @pytest.fixture
@@ -51,3 +54,16 @@ def request_with_user_jwt(user_jwt, base_request):
     access_token = user_jwt
     base_request.META["HTTP_TOKEN"] = access_token
     return base_request
+
+
+@pytest.fixture
+def create_page_data():
+    return {"name": "Test Page", "description": "Testing page"}
+
+
+@pytest.fixture
+def page(user_jwt, create_page_data):
+    token = user_jwt
+    client.post("/pages/", create_page_data, **{"HTTP_TOKEN": token})
+    page = Page.objects.filter(name=create_page_data["name"]).first()
+    return token, page

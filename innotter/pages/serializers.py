@@ -5,10 +5,10 @@ from rest_framework import serializers
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = "__all__"
+        fields = ("name",)
 
 
-class PageSerializer(serializers.ModelSerializer):
+class PageFullInfoSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True)
 
     class Meta:
@@ -22,3 +22,22 @@ class PageSerializer(serializers.ModelSerializer):
         ]
         data["followers"] = [elem.follower_uuid for elem in instance.followers.all()]
         return data
+
+
+class PageCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = (
+            "name",
+            "description",
+        )
+
+
+class PagePatchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Page
+        fields = (
+            "name",
+            "uuid",
+            "description",
+        )

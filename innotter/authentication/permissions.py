@@ -15,10 +15,6 @@ class HasExpectedValue(permissions.BasePermission):
         except exceptions.AuthenticationFailed:
             return None
 
-    def has_object_permission(self, request, view, obj):
-        value = self.check_value(request)
-        return value == self.expected_value
-
     def has_permission(self, request, view):
         value = self.check_value(request)
         return value == self.expected_value
@@ -44,6 +40,6 @@ class IsUser(IsRole):
         super().__init__("USER")
 
 
-class IsBlocked(HasExpectedValue):
+class IsNotBlocked(HasExpectedValue):
     def __init__(self):
         super().__init__(False, auth_service.get_block_status)
