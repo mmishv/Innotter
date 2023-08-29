@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
 
+from authentication.tasks import get_secure_data
 from django.db.models import Q
 from pages.models import PageFollower
 from posts.models import Post, PostLike
 from posts.serializers import PostSerializer
+from posts.tasks import send_email
 from rest_framework.exceptions import ValidationError
 
 
@@ -44,3 +46,15 @@ class PostService:
         )
         post_serializer = PostSerializer(combined_posts, many=True)
         return post_serializer.data
+
+    @staticmethod
+    def get_page_followers_emails(page):
+        followers = PageFollower.objects.filter(page=page)
+        get_email_lambda = lambda user_id: get_secure_data.delay(user_id).get()["email"]
+        return [get_email_lambda(follower.follower_uuid) for follower in followers]
+
+    @staticmethod
+    def send_notifications(page):
+        followers = PostService.get_page_followers_emails(page)
+        if followers:
+            send_email.delay(page.name, followers)
