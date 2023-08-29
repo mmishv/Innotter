@@ -12,19 +12,19 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - rabbitmq
+      - rabbit
     restart: on-failure
     networks:
       - user-management_default
 
-  rabbitmq:
-    container_name: rabbitmq
+  rabbit:
+    container_name: rabbit
     image: rabbitmq:3-management
-    env_file:
-      - ./.env
     ports:
-      - 5673:5672
+      - 5672:5672
       - 15672:15672
+    networks:
+      - user-management_default
 
   celery_worker:
     restart: always
@@ -36,7 +36,7 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - rabbitmq
+      - rabbit
     networks:
       - user-management_default
   redis:

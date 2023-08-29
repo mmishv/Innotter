@@ -1,5 +1,6 @@
 from authentication.permissions import IsAdministrator, IsModerator, IsNotBlocked
 from authentication.service import AuthService
+from pages.models import Page
 from pages.views import MultiPermissionViewSetMixin, MultiSerializerViewSetMixin
 from posts.models import Post
 from posts.permissions import IsPageOwner, IsPagePublic, IsUserApprovedByPrivatePage
@@ -57,13 +58,17 @@ class PostViewSet(
         page_pk = self.kwargs.get("page_pk")
         return Post.objects.filter(page__pk=page_pk)
 
+    def perform_create(self, serializer):
+        page_pk = self.kwargs.get("page_pk")
+        page = Page.objects.get(pk=page_pk)
+        serializer.save(page=page)
+        self.post_service.send_notifications(page)
+
     @action(detail=True, methods=["post"])
     def reply(self, request, page_pk=None, pk=None):
         serializer = PostContentSerializer(context={"view": self}, data=request.data)
         serializer.is_valid(raise_exception=True)
-        new_post = serializer.save()
-        new_post.reply_to = self.get_object()
-        new_post.save()
+        serializer.save(page=Page.objects.get(pk=page_pk), reply_to=self.get_object())
         return Response(
             {"detail": "You have successfully replied to the post"}, status=201
         )

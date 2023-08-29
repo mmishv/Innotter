@@ -1,4 +1,5 @@
 import pytest
+from pages.models import PageFollower
 from posts.models import Post
 from posts.permissions import IsPageOwner, IsPagePublic, IsUserApprovedByPrivatePage
 from rest_framework.test import APIClient
@@ -83,6 +84,7 @@ def test_create_post(page, mock_is_owner, is_owner, expected_status):
     token, page = page
     mock_is_owner.return_value = is_owner
     post_data = {"content": "test post"}
+    PageFollower.objects.create(follower_uuid=page.owner_uuid, page=page)
     response = client.post(
         f"/pages/{page.pk}/posts/", post_data, **{"HTTP_TOKEN": token}
     )

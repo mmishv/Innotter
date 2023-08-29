@@ -28,7 +28,7 @@ class S3Service:
         except Exception as e:
             raise ConnectionError(f"Error interacting with S3: {str(e)}")
 
-    def upload_page_image(self, file, page_uuid: str):
+    def upload_page_image(self, file, page_uuid: str) -> str:
         def upload_to_s3(s3):
             file_path = f"page_image/{page_uuid}"
             s3.upload_fileobj(file, self.PAGE_IMAGE_BUCKET, file_path)
@@ -36,7 +36,7 @@ class S3Service:
 
         return self._perform_s3_action(upload_to_s3)
 
-    def get_page_image(self, avatar_s3_path: str):
+    def get_page_image(self, avatar_s3_path: str) -> str:
         def get_from_s3(s3):
             try:
                 s3_ob = s3.get_object(Bucket=self.PAGE_IMAGE_BUCKET, Key=avatar_s3_path)
@@ -47,7 +47,7 @@ class S3Service:
 
         return self._perform_s3_action(get_from_s3)
 
-    def delete_page_image(self, avatar_s3_path: str):
+    def delete_page_image(self, avatar_s3_path: str) -> None:
         def delete_from_s3(s3):
             try:
                 s3.delete_object(Bucket=self.PAGE_IMAGE_BUCKET, Key=avatar_s3_path)

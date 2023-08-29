@@ -6,7 +6,7 @@ from rest_framework import exceptions
 
 class AuthService:
     @staticmethod
-    def retrieve_user_data(request):
+    def retrieve_user_data(request) -> dict:
         access_token = request.META.get("HTTP_TOKEN")
         try:
             data = validate_token.delay(access_token).get()
@@ -16,17 +16,17 @@ class AuthService:
             raise exceptions.AuthenticationFailed(code=e.status_code, detail=str(e))
         return data
 
-    def _get_value_from_jwt(self, request, key):
+    def _get_value_from_jwt(self, request, key) -> str:
         data = self.retrieve_user_data(request)
         return data.get(key)
 
-    def get_user_id(self, request):
+    def get_user_id(self, request) -> str:
         return self._get_value_from_jwt(request, "id")
 
-    def get_role(self, request):
+    def get_role(self, request) -> str:
         return self._get_value_from_jwt(request, "role")
 
-    def get_block_status(self, request):
+    def get_block_status(self, request) -> str:
         return self._get_value_from_jwt(request, "is_blocked")
 
 
