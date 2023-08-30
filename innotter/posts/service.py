@@ -8,19 +8,24 @@ from posts.serializers import PostSerializer
 from posts.tasks import send_email
 from rest_framework.exceptions import ValidationError
 
+from innotter.producer import PublishEventService
+
 
 class PostService:
-    @staticmethod
-    def like(post, user_uuid):
+    def __init__(self):
+        self.statistics_service = PublishEventService()
+
+    def like(self, post, user_uuid):
         if PostLike.objects.filter(post=post, user_uuid=user_uuid).exists():
             raise ValidationError("You have already liked this post")
         PostLike.objects.create(post=post, user_uuid=user_uuid)
+        self.statistics_service.publish_update_likes(str(post.page.uuid), 1)
 
-    @staticmethod
-    def unlike(post, user_uuid):
+    def unlike(self, post, user_uuid):
         if not PostLike.objects.filter(post=post, user_uuid=user_uuid).exists():
             raise ValidationError("The post wasn't liked")
         PostLike.objects.filter(post=post, user_uuid=user_uuid).delete()
+        self.statistics_service.publish_update_likes(str(post.page.uuid), -1)
 
     @staticmethod
     def get_liked_posts(user_uuid) -> dict:

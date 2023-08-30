@@ -15,6 +15,8 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from innotter.producer import PublishEventService
+
 
 class MultiSerializerViewSetMixin(object):
     def get_serializer_class(self):
@@ -69,16 +71,19 @@ class PageViewSet(
     auth_service = AuthService()
     page_service = PageService()
     image_service = S3Service()
+    statistics_service = PublishEventService()
 
     def perform_destroy(self, instance):
         if instance.image_s3_path:
             self.image_service.delete_page_image(instance.image_s3_path)
+        self.statistics_service.publish_delete_page(str(instance.uuid))
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     def perform_create(self, serializer):
         owner_uuid = self.auth_service.get_user_id(self.request)
-        serializer.save(owner_uuid=owner_uuid, uuid=uuid.uuid4())
+        page = serializer.save(owner_uuid=owner_uuid, uuid=uuid.uuid4())
+        self.statistics_service.publish_create_page(str(page.uuid), str(owner_uuid))
 
     @action(detail=True, methods=["patch"])
     def toggle_visibility(self, request, pk=None):
@@ -112,12 +117,17 @@ class PageViewSet(
         page = self.get_object()
         user_uuid = self.auth_service.get_user_id(self.request)
         self.page_service.unsubscribe(page, user_uuid)
+        if page.is_private:
+            self.statistics_service.publish_update_follow_requests(str(page.uuid), -1)
+        else:
+            self.statistics_service.publish_update_followers(str(page.uuid), -1)
         return Response({"detail": "You have successfully unsubscribed to the page"})
 
     @action(detail=True, methods=["get"])
     def follow_requests(self, request, pk=None):
         page = self.get_object()
         requests = self.page_service.get_follow_requests(page)
+        self.statistics_service.publish_update_followers(str(page.uuid), 1)
         return Response(data=requests, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"])
