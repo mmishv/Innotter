@@ -1,7 +1,25 @@
 import os
 
+from aws.s3_service import SessionSingleton
 from boto3.session import Session
 from botocore.exceptions import BotoCoreError, ClientError
+
+
+class SESSingleton:
+    _instance = None
+
+    def __new__(
+        cls, aws_access_key_id, aws_secret_access_key, region_name, endpoint_url
+    ):
+        if cls._instance is None:
+            session = SessionSingleton.get_instance(
+                aws_access_key_id, aws_secret_access_key
+            )
+            cls._instance = session.client(
+                "ses", region_name=region_name, endpoint_url=endpoint_url
+            )
+
+        return cls._instance
 
 
 class SESService:
@@ -12,18 +30,17 @@ class SESService:
         self.endpoint_url = os.getenv("ENDPOINT_URL")
 
     def _ses_session(self):
-        return Session(
-            aws_secret_access_key=self.aws_secret_access_key,
-            aws_access_key_id=self.aws_access_key_id,
+        return SESSingleton(
+            self.aws_access_key_id,
+            self.aws_secret_access_key,
+            self.region_name,
+            self.endpoint_url,
         )
 
     def _perform_ses_action(self, action_callback):
         try:
             session = self._ses_session()
-            ses = session.client(
-                "ses", region_name=self.region_name, endpoint_url=self.endpoint_url
-            )
-            return action_callback(ses)
+            return action_callback(session)
         except BotoCoreError as e:
             raise ConnectionError(f"Error interacting with SES: {str(e)}")
 

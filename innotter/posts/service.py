@@ -19,13 +19,13 @@ class PostService:
         if PostLike.objects.filter(post=post, user_uuid=user_uuid).exists():
             raise ValidationError("You have already liked this post")
         PostLike.objects.create(post=post, user_uuid=user_uuid)
-        self.statistics_service.publish_update_likes(str(post.page.uuid), 1)
+        self.statistics_service.publish_update_likes(str(post.page.id), 1)
 
     def unlike(self, post, user_uuid):
         if not PostLike.objects.filter(post=post, user_uuid=user_uuid).exists():
             raise ValidationError("The post wasn't liked")
         PostLike.objects.filter(post=post, user_uuid=user_uuid).delete()
-        self.statistics_service.publish_update_likes(str(post.page.uuid), -1)
+        self.statistics_service.publish_update_likes(str(post.page.id), -1)
 
     @staticmethod
     def get_liked_posts(user_uuid) -> dict:
@@ -38,17 +38,16 @@ class PostService:
     def get_news_feed(user_uuid) -> dict:
         one_week_ago = datetime.now() - timedelta(days=7)
         own_pages_posts = Post.objects.filter(
-            Q(page__owner_uuid=user_uuid) | Q(created_at__gte=one_week_ago)
+            Q(page__owner_uuid=user_uuid) & Q(created_at__gte=one_week_ago)
         )
         followed_pages = [
-            page for page in PageFollower.objects.filter(page__owner_uuid=user_uuid)
+            page.page for page in PageFollower.objects.filter(follower_uuid=user_uuid)
         ]
         followed_pages_posts = Post.objects.filter(
-            Q(page__in=followed_pages) | Q(created_at__gte=one_week_ago)
+            Q(page__in=followed_pages) & Q(created_at__gte=one_week_ago)
         )
-        combined_posts = own_pages_posts.union(followed_pages_posts).order_by(
-            "-updated_at"
-        )
+        combined_posts = own_pages_posts.union(followed_pages_posts)
+        combined_posts = combined_posts.order_by("-created_at")
         post_serializer = PostSerializer(combined_posts, many=True)
         return post_serializer.data
 

@@ -66,18 +66,21 @@ class PostViewSet(
         page = Page.objects.get(pk=page_pk)
         serializer.save(page=page)
         self.post_service.send_notifications(page)
-        self.statistics_service.publish_update_posts(str(page.uuid), 1)
+        self.statistics_service.publish_update_posts(str(page.id), 1)
 
-    def perform_destroy(self, instance):
-        self.statistics_service.publish_update_posts(str(instance.page.uuid), -1)
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.delete()
+        self.statistics_service.publish_update_posts(str(instance.page.id), -1)
+        return Response(status=204)
 
     @action(detail=True, methods=["post"])
     def reply(self, request, page_pk=None, pk=None):
         serializer = PostContentSerializer(context={"view": self}, data=request.data)
         serializer.is_valid(raise_exception=True)
         page = Page.objects.get(pk=page_pk)
-        serializer.save(page=page, reply_to=self.get_object())
-        self.statistics_service.publish_update_posts(str(page.uuid), 1)
+        serializer.save(page=page, reply_to=Post.objects.get(pk=pk))
+        self.statistics_service.publish_update_posts(str(page.id), 1)
         return Response(
             {"detail": "You have successfully replied to the post"}, status=201
         )

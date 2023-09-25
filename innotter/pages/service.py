@@ -41,10 +41,10 @@ class PageService:
                 "You are already a subscriber or have requested access"
             )
         if page.is_private:
-            self.statistics_service.publish_update_follow_requests(str(page.uuid), 1)
+            self.statistics_service.publish_update_follow_requests(str(page.id), 1)
             PageRequest.objects.create(requester_uuid=user_uuid, page=page)
         else:
-            self.statistics_service.publish_update_followers(str(page.uuid), 1)
+            self.statistics_service.publish_update_followers(str(page.id), 1)
             PageFollower.objects.create(follower_uuid=user_uuid, page=page)
 
     def unsubscribe(self, page: Page, user_uuid):
@@ -54,14 +54,14 @@ class PageService:
             follower_uuid=user_uuid, page=page
         ).first()
         if follower:
-            self.statistics_service.publish_update_followers(str(page.uuid), -1)
+            self.statistics_service.publish_update_followers(str(page.id), -1)
             follower.delete()
             return
         request = PageRequest.objects.filter(
             requester_uuid=user_uuid, page=page
         ).first()
         if request:
-            self.statistics_service.publish_update_follow_requests(str(page.uuid), -1)
+            self.statistics_service.publish_update_follow_requests(str(page.id), -1)
             request.delete()
             return
         raise ValidationError("You aren't a subscriber or haven't requested access")
@@ -79,25 +79,25 @@ class PageService:
         request = get_object_or_404(PageRequest, requester_uuid=user_uuid, page=page)
         PageFollower.objects.create(follower_uuid=user_uuid, page=page)
         request.delete()
-        self.accept_requests_for_statistics(str(page.uuid), 1)
+        self.accept_requests_for_statistics(str(page.id), 1)
 
     def reject_request(self, page, user_uuid):
         request = get_object_or_404(PageRequest, requester_uuid=user_uuid, page=page)
         request.delete()
-        self.statistics_service.publish_update_follow_requests(str(page.uuid), -1)
+        self.statistics_service.publish_update_follow_requests(str(page.id), -1)
 
     def accept_all_requests(self, page):
         requests = page.follow_requests.all()
         for elem in requests:
             PageFollower.objects.create(follower_uuid=elem.requester_uuid, page=page)
         PageRequest.objects.filter(page=page).delete()
-        self.accept_requests_for_statistics(str(page.uuid), len(requests))
+        self.accept_requests_for_statistics(str(page.id), len(requests))
 
     def reject_all_requests(self, page):
         requests = PageRequest.objects.filter(page=page)
         requests.delete()
         self.statistics_service.publish_update_follow_requests(
-            str(page.uuid), -len(requests)
+            str(page.id), -len(requests)
         )
 
     @staticmethod
@@ -116,10 +116,10 @@ class PageService:
             image_service.delete_page_image(page.image_s3_path)
         if file_extension not in ["jpg", "jpeg", "png"]:
             raise ValidationError("Invalid file extension")
-        image_s3_path = image_service.upload_page_image(file, page.uuid)
+        image_s3_path = image_service.upload_page_image(file, page.id)
         page.image_s3_path = image_s3_path
         page.save()
 
-    def accept_requests_for_statistics(self, page_uuid: str, cnt: int):
-        self.statistics_service.publish_update_followers(str(page_uuid), cnt)
-        self.statistics_service.publish_update_follow_requests(str(page_uuid), -cnt)
+    def accept_requests_for_statistics(self, page_id: str, cnt: int):
+        self.statistics_service.publish_update_followers(str(page_id), cnt)
+        self.statistics_service.publish_update_follow_requests(str(page_id), -cnt)
