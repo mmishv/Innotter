@@ -7,6 +7,7 @@ from rest_framework_nested import routers
 router = SimpleRouter()
 
 router.register(r"pages", views.PageViewSet)
+router.register(r"tags", views.TagViewSet)
 
 nested_router = routers.NestedSimpleRouter(
     router, parent_prefix=r"pages", lookup="page"

@@ -26,5 +26,5 @@ class IsUserApprovedByPrivatePage(permissions.BasePermission):
     def has_permission(self, request, view):
         page = get_page_from_request(request)
         return page.is_private and page.followers.all().filter(
-            follower_uuid=auth_service.get_user_id(request).exists()
+            follower_uuid=auth_service.get_user_id(request)
         )
